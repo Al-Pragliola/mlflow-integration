@@ -41,26 +41,6 @@ jobs:
               raise SystemExit(f"Release tag must match package version: {expected_tag}")
           PY
 
-      # Package publication runs independently on the same tag. Wait for the
-      # exact release on PyPI rather than installing an older available version.
-      - name: Wait for release package on PyPI
-        if: startsWith(github.ref, 'refs/tags/')
-        env:
-          RELEASE_TAG: ${{ github.ref_name }}
-        run: |
-          for attempt in {1..40}; do
-            if python3 -m pip download --no-cache-dir --no-deps --only-binary=:all: \
-              --index-url https://pypi.org/simple --timeout 10 --retries 0 \
-              --dest "$RUNNER_TEMP/image-package-check" \
-              "mlflow-kubernetes-plugins==${RELEASE_TAG#v}"; then
-              exit 0
-            fi
-            echo "Waiting for PyPI publication (attempt $attempt/40)"
-            sleep 15
-          done
-          echo "Release package is not available on PyPI; refusing to build the image."
-          exit 1
-
       - name: Set up QEMU
         uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # v4.0.0
         with:
